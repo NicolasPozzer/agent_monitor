@@ -7,10 +7,9 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 class CronJob:
-    def __init__(self, job: str, name: str, state: str = "active"):
+    def __init__(self, job: str, name: str):
         self.job = job
         self.name = name
-        self.state = state
 
     def __str__(self):
         return f"{self.job} {self.name}"
@@ -23,6 +22,7 @@ class CronJob:
         job = " ".join(parts[:5])
         name = " ".join(parts[5:])
         return CronJob(job, name)
+
 
     def to_crontab_string(self):
         return f"{self.job} {self.name}"
@@ -45,10 +45,13 @@ def get_crontab(state=None):
     return cron_jobs
 
 
-def set_crontab(crontab, state="active"):
-    new_crontab = "\n".join([job.to_crontab_string() for job in crontab if job.state == state])
+def set_crontab(crontab):
+    new_crontab = "\n".join([str(job) for job in crontab])
+    # Añadir una nueva línea al final del archivo crontab
+    new_crontab += "\n"
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
+
 
 
 
@@ -60,9 +63,12 @@ async def read_crontab(request: Request):
 @router.post("/crons/add")
 async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     crontab = get_crontab()
-    crontab.append(CronJob(cron_job, name, state="paused"))
+    # Crear un nuevo objeto CronJob
+    new_cron = CronJob(cron_job, name)
+    crontab.append(new_cron)
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
+
 
 
 @router.post("/crons/delete")
