@@ -44,8 +44,12 @@ def get_crontab():
 
 def set_crontab(crontab):
     new_crontab = "\n".join([job.to_crontab_string() for job in crontab])
+    # Asegurarse de que haya una línea nueva al final
+    if not new_crontab.endswith('\n'):
+        new_crontab += '\n'
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
+
 
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
@@ -58,6 +62,7 @@ async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     crontab.append(CronJob(cron_job, name, state="paused"))
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
+
 
 @router.post("/crons/delete")
 async def delete_cron_job(cron_job: str = Form(...)):
