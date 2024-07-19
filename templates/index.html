@@ -40,6 +40,8 @@
 </head>
 <body>
 <h1>Tareas Cron</h1>
+
+{% if crontab %}
 <table>
     <tr>
         <th>Nombre</th>
@@ -52,27 +54,30 @@
         <td>{{ cron.job }}</td>
         <td>
             <form style="display:inline;" method="post" action="/crons/run">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <input type="hidden" name="cron_job" value="{{ cron.job }} {{ cron.name }}">
                 <button class="button run-button">Run</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/edit">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <input type="hidden" name="cron_job" value="{{ cron.job }} {{ cron.name }}">
                 <input type="text" name="new_cron_job" placeholder="* * * * * command">
                 <button class="button edit-button">Edit</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <input type="hidden" name="cron_job" value="{{ cron.job }} {{ cron.name }}">
                 <button class="button delete-button">Delete</button>
             </form>
         </td>
     </tr>
     {% endfor %}
 </table>
+{% else %}
+<p>No hay tareas cron programadas.</p>
+{% endif %}
 
 <h2>Agregar Tarea Cron</h2>
 <form action="/crons/add" method="post">
-    <input type="text" name="cron_job" placeholder="* * * * * command">
-    <input type="text" name="name" placeholder="Nombre del Cron Job">
+    <input type="text" name="cron_job" placeholder="* * * * * command" required>
+    <input type="text" name="name" placeholder="Nombre del Cron Job" required>
     <button type="submit">Agregar</button>
 </form>
 </body>
