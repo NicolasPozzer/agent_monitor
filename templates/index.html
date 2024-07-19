@@ -68,7 +68,7 @@
             {% endif %}
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command">
+                <input type="text" name="new_cron_job" placeholder="* * * * * command" required>
                 <button class="button edit-button">Edit</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">

@@ -10,7 +10,7 @@ class CronJob:
     def __init__(self, job: str, name: str, state: str = "paused"):
         self.job = job
         self.name = name
-        self.state = state  # Estado por defecto es "paused"
+        self.state = state
 
     def __str__(self):
         return f"{self.job} {self.name}"
@@ -22,7 +22,7 @@ class CronJob:
             raise ValueError("Invalid cron string")
         job = " ".join(parts[:5])
         name = " ".join(parts[5:])
-        return CronJob(job, name, state="running")
+        return CronJob(job, name, state="paused")
 
     def to_crontab_string(self):
         return f"{self.job} {self.name}"
