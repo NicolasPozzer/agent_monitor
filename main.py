@@ -1,8 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-from routers.cron_router import router as cron_rout, get_crontab
-import subprocess
+from fastapi.responses import HTMLResponse, RedirectResponse  # Importa RedirectResponse
+from routers.cron_router import router as cron_rout
 
 app = FastAPI()  # Crea la Aplicación
 
@@ -15,8 +14,8 @@ app.include_router(cron_rout)
 # Endpoint que devuelve un mensaje y muestra el HTML
 @app.get("/", response_class=HTMLResponse)
 async def message(request: Request):
-    crontab = get_crontab()
-    return templates.TemplateResponse("index.html", {"request": request, "crontab": crontab})
+    # Redirige al endpoint que maneja la visualización de crons
+    return RedirectResponse(url='/crons', status_code=303)
 
 if __name__ == '__main__':
     import uvicorn
