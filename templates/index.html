@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestión de Tareas Cron</title>
+</head>
+<body>
+<h1>Tareas Cron</h1>
+<pre>{{ crontab }}</pre>
+
+<h2>Agregar Tarea Cron</h2>
+<form action="/crons/add" method="post">
+    <input type="text" name="cron_job" placeholder="* * * * * command">
+    <button type="submit">Agregar</button>
+</form>
+
+<h2>Eliminar Tarea Cron</h2>
+<form action="/crons/delete" method="post">
+    <input type="text" name="cron_job" placeholder="* * * * * command">
+    <button type="submit">Eliminar</button>
+</form>
+</body>
+</html>
