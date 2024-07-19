@@ -34,8 +34,12 @@ def get_crontab():
 
 def set_crontab(crontab):
     new_crontab = "\n".join([str(job) for job in crontab])
+    # Asegurarse de que haya una línea en blanco al final
+    if not new_crontab.endswith('\n'):
+        new_crontab += '\n'
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
+
 
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
