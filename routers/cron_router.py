@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+import os
 import subprocess
 import tempfile
-import os
+import shutil
 
 from models.CronJob import CronJob
 
@@ -40,6 +41,55 @@ def set_crontab(crontab):
         subprocess.run(['crontab', temp_file.name])
         os.remove(temp_file.name)  # Eliminar el archivo temporal después de usarlo
 
+@router.post("/crons/run")
+async def run_cron_job(cron_job: str = Form(...)):
+    # Crear un archivo temporal para guardar el crontab actual
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_file_name = temp_file.name
+
+    # Guardar el crontab actual en el archivo temporal
+    subprocess.run(['crontab', '-l'], stdout=open(temp_file_name, 'w'))
+
+    # Leer el crontab actual
+    with open(temp_file_name, 'r') as file:
+        crontab = file.read()
+
+    # Modificar el crontab para pausar el cron job
+    lines = crontab.splitlines()
+    new_crontab = []
+    job_found = False
+
+    for line in lines:
+        if line.strip().startswith(cron_job):
+            # Si encontramos el cron job, comentarlo
+            new_crontab.append(f"# {line}")
+            job_found = True
+        else:
+            new_crontab.append(line)
+
+    # Si el cron job no fue encontrado, agregarlo
+    if not job_found:
+        new_crontab.append(f"# {cron_job}")
+
+    # Guardar el nuevo crontab
+    with open(temp_file_name, 'w') as file:
+        file.write("\n".join(new_crontab))
+
+    # Instalar el nuevo crontab
+    subprocess.run(['crontab', temp_file_name])
+
+    # Ejecutar el cron job
+    subprocess.Popen(cron_job.split(), shell=True)
+
+    # Restaurar el crontab original después de 1 minuto (o cualquier otro tiempo que desees)
+    shutil.copy(temp_file_name, '/tmp/cron_backup')  # Guardar copia de seguridad
+
+    # Eliminar el archivo temporal
+    os.remove(temp_file_name)
+
+    return RedirectResponse("/", status_code=303)
+
+
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
     crontab = get_crontab()  # Obtener las tareas cron
@@ -52,6 +102,19 @@ async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     crontab.append(CronJob(cron_job, name))
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
+
+
+
+@router.post("/crons/restore")
+async def restore_cron():
+    if os.path.exists('/tmp/cron_backup'):
+        shutil.copy('/tmp/cron_backup', '/tmp/crontab_restore')
+        subprocess.run(['crontab', '/tmp/crontab_restore'])
+        os.remove('/tmp/crontab_restore')
+        os.remove('/tmp/cron_backup')
+        return RedirectResponse("/", status_code=303)
+    return HTMLResponse("No backup found", status_code=404)
+
 
 @router.post("/crons/delete")
 async def delete_cron_job(cron_job: str = Form(...)):
