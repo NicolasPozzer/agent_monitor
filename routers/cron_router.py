@@ -7,12 +7,13 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 class CronJob:
-    def __init__(self, job: str, name: str):
+    def __init__(self, job: str, name: str, job_state: str = 'active'):
         self.job = job
         self.name = name
+        self.job_state = job_state
 
     def __str__(self):
-        return f"{self.job} {self.name}"
+        return f"{self.job} {self.name} {self.job_state}"
 
     @staticmethod
     def from_string(cron_string: str):
@@ -20,12 +21,9 @@ class CronJob:
         if len(parts) < 6:
             raise ValueError("Invalid cron string")
         job = " ".join(parts[:5])
-        name = " ".join(parts[5:])
-        return CronJob(job, name)
-
-
-    def to_crontab_string(self):
-        return f"{self.job} {self.name}"
+        name = " ".join(parts[5:-1])
+        job_state = parts[-1] if len(parts) > 5 else 'active'
+        return CronJob(job, name, job_state)
 
 
 
@@ -63,11 +61,11 @@ async def read_crontab(request: Request):
 @router.post("/crons/add")
 async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     crontab = get_crontab()
-    # Crear un nuevo objeto CronJob
     new_cron = CronJob(cron_job, name)
     crontab.append(new_cron)
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
+
 
 
 
