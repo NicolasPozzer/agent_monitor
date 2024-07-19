@@ -2,12 +2,11 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 import subprocess
+import tempfile
 import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-
-CRON_FILE = "crontab.txt"
 
 # Función para obtener el contenido del crontab
 def get_crontab():
@@ -19,16 +18,21 @@ def get_crontab():
     for line in crontab.split('\n'):
         if line.strip():
             parts = line.split()
-            name = " ".join(parts[5:])
             job = " ".join(parts[:5])
+            name = " ".join(parts[5:]) if len(parts) > 5 else ""
             cron_jobs.append({"name": name, "job": job})
     return cron_jobs
 
 # Función para establecer el contenido del crontab
 def set_crontab(crontab):
     new_crontab = "\n".join([f"{job['job']} {job['name']}" for job in crontab])
-    p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
-    p.communicate(input=new_crontab.encode('utf-8'))
+    new_crontab = new_crontab + "\n"  # Asegura que haya una nueva línea al final
+
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.write(new_crontab.encode('utf-8'))
+        temp_file.close()
+        subprocess.run(['crontab', temp_file.name])
+        os.remove(temp_file.name)  # Eliminar el archivo temporal después de usarlo
 
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
