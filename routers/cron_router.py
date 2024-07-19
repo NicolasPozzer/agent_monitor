@@ -27,6 +27,7 @@ class CronJob:
 
 
 
+
 def get_crontab(state=None):
     try:
         crontab = subprocess.check_output(['crontab', '-l']).decode('utf-8')
@@ -36,19 +37,21 @@ def get_crontab(state=None):
     for line in crontab.split('\n'):
         if line.strip():
             parts = line.split()
-            name = " ".join(parts[5:])
+            if len(parts) < 6:
+                continue
             job = " ".join(parts[:5])
-            job_state = "active" if state is None else state
-            cron_jobs.append(CronJob(job, name, job_state))
+            name = " ".join(parts[5:-1])
+            job_state = parts[-1] if len(parts) > 5 else 'active'
+            if state is None or job_state == state:
+                cron_jobs.append(CronJob(job, name, job_state))
     return cron_jobs
 
-
-def set_crontab(crontab):
-    new_crontab = "\n".join([str(job) for job in crontab])
-    # Añadir una nueva línea al final del archivo crontab
-    new_crontab += "\n"
+def set_crontab(crontab, state=None):
+    new_crontab = "\n".join([str(job) for job in crontab if state is None or job.job_state == state])
+    new_crontab += "\n"  # Añadir una nueva línea al final del archivo crontab
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
+
 
 
 
@@ -100,18 +103,15 @@ async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
         # Reactivar el cron job
         for job in paused_crontab:
             if job.job.strip() == cron_job.strip():
-                job.state = "active"
-                active_crontab.append(job)
-            else:
+                job.job_state = "active"
                 active_crontab.append(job)
         paused_crontab = [job for job in paused_crontab if job.job.strip() != cron_job.strip()]
+
     elif action == "Pause":
         # Pausar el cron job
         for job in active_crontab:
             if job.job.strip() == cron_job.strip():
-                job.state = "paused"
-                paused_crontab.append(job)
-            else:
+                job.job_state = "paused"
                 paused_crontab.append(job)
         active_crontab = [job for job in active_crontab if job.job.strip() != cron_job.strip()]
 
@@ -120,4 +120,5 @@ async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
     set_crontab(paused_crontab, state="paused")
 
     return RedirectResponse("/", status_code=303)
+
 
