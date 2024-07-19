@@ -4,7 +4,8 @@ from fastapi.templating import Jinja2Templates
 import subprocess
 import tempfile
 import os
-from models import CronJob  # Asegúrate de que el archivo models.py esté en el mismo directorio o ajusta el import
+
+from models.CronJob import CronJob
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
