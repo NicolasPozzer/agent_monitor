@@ -23,22 +23,18 @@
             text-decoration: none;
             display: inline-block;
             border-radius: 4px;
-            border: none;
-            color: white;
-            cursor: pointer;
         }
         .edit-button {
             background-color: #4CAF50;
+            color: white;
         }
         .delete-button {
             background-color: #f44336;
+            color: white;
         }
         .run-button {
             background-color: #008CBA;
-        }
-        .pause-button {
-            background-color: #e7e7e7;
-            color: black;
+            color: white;
         }
     </style>
 </head>
@@ -65,7 +61,7 @@
             </form>
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command" required>
+                <input type="text" name="new_cron_job" placeholder="* * * * * command">
                 <button class="button edit-button">Edit</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">
@@ -100,7 +96,7 @@
             </form>
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command" required>
+                <input type="text" name="new_cron_job" placeholder="* * * * * command">
                 <button class="button edit-button">Edit</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">

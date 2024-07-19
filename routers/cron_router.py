@@ -13,17 +13,18 @@ class CronJob:
         self.job_state = job_state
 
     def __str__(self):
-        return f"{self.job} {self.name} {self.job_state}"
+        return f"{self.job} # {self.name} [{self.job_state}]"
 
     @staticmethod
     def from_string(cron_string: str):
-        parts = cron_string.split()
-        if len(parts) < 6:
+        parts = cron_string.split(' # ')
+        if len(parts) < 2:
             raise ValueError("Invalid cron string")
-        job = " ".join(parts[:5])
-        name = " ".join(parts[5:-1])
-        job_state = parts[-1] if len(parts) > 5 else 'active'
+        job = parts[0].strip()
+        name = parts[1].strip()
+        job_state = "active" if len(parts) < 3 else parts[2].strip('[]')
         return CronJob(job, name, job_state)
+
 
 def get_crontab(state=None):
     try:
@@ -32,14 +33,12 @@ def get_crontab(state=None):
         crontab = ""
     cron_jobs = []
     for line in crontab.split('\n'):
-        if line.strip():
-            parts = line.split()
-            job = " ".join(parts[:5])
-            name = " ".join(parts[5:-1])
-            job_state = parts[-1] if len(parts) > 5 else 'active'
+        if line.strip() and ' # ' in line:
+            parts = line.split(' # ')
+            job = parts[0].strip()
+            name = parts[1].strip()
+            job_state = "active" if state is None else state
             cron_jobs.append(CronJob(job, name, job_state))
-    if state:
-        cron_jobs = [job for job in cron_jobs if job.job_state == state]
     return cron_jobs
 
 def set_crontab(crontab):
@@ -47,6 +46,7 @@ def set_crontab(crontab):
     new_crontab += "\n"
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
+
 
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
