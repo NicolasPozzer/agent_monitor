@@ -61,6 +61,7 @@ async def delete_cron_job(cron_job: str = Form(...)):
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
 
+""" edit
 @router.post("/crons/edit")
 async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...), name: str = Form(...)):
     crontab = get_crontab()
@@ -74,6 +75,7 @@ async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...)
     if updated:
         set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
+    """
 
 @router.post("/crons/run")
 async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):

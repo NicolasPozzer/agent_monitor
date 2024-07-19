@@ -24,16 +24,16 @@
             display: inline-block;
             border-radius: 4px;
         }
-        .edit-button {
-            background-color: #4CAF50;
-            color: white;
-        }
         .delete-button {
             background-color: #f44336;
             color: white;
         }
         .run-button {
             background-color: #008CBA;
+            color: white;
+        }
+        .pause-button {
+            background-color: gray;
             color: white;
         }
     </style>
@@ -57,12 +57,9 @@
             <form style="display:inline;" method="post" action="/crons/run">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
                 <input type="hidden" name="action" value="{% if cron.job.startswith('#') %}Run{% else %}Pause{% endif %}">
-                <button class="button run-button">{% if cron.job.startswith('#') %}Run{% else %}Pause{% endif %}</button>
-            </form>
-            <form style="display:inline;" method="post" action="/crons/edit">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command">
-                <button class="button edit-button">Edit</button>
+                <button class="button {% if cron.job.startswith('#') %}run-button{% else %}pause-button{% endif %}">
+                    {% if cron.job.startswith('#') %}Run{% else %}Pause{% endif %}
+                </button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
