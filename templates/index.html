@@ -36,10 +36,6 @@
             background-color: #008CBA;
             color: white;
         }
-        .restore-button {
-            background-color: #FFC107;
-            color: black;
-        }
     </style>
 </head>
 <body>
@@ -57,20 +53,22 @@
         <td>{{ cron.name }}</td>
         <td>{{ cron.job }}</td>
         <td>
+            {% if cron.state == 'running' %}
             <form style="display:inline;" method="post" action="/crons/run">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="hidden" name="state" value="{{ cron.state }}" id="state-{{ loop.index }}">
-                <button class="button run-button" id="button-{{ loop.index }}" data-state="{{ cron.state }}">
-                    {% if cron.state == "running" %}
-                    Pause
-                    {% else %}
-                    Run
-                    {% endif %}
-                </button>
+                <input type="hidden" name="state" value="paused">
+                <button class="button run-button">Pause</button>
             </form>
+            {% else %}
+            <form style="display:inline;" method="post" action="/crons/run">
+                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <input type="hidden" name="state" value="running">
+                <button class="button run-button">Run</button>
+            </form>
+            {% endif %}
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command" required>
+                <input type="text" name="new_cron_job" placeholder="* * * * * command">
                 <button class="button edit-button">Edit</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/delete">
@@ -91,23 +89,5 @@
     <input type="text" name="name" placeholder="Nombre del Cron Job" required>
     <button type="submit">Agregar</button>
 </form>
-
-<h2>Restaurar Tareas Cron</h2>
-<form action="/crons/restore" method="post">
-    <button class="button restore-button">Restaurar Cron Jobs</button>
-</form>
-
-<script>
-    // Script para cambiar el estado del botón
-    document.querySelectorAll('.run-button').forEach(button => {
-        button.addEventListener('click', function() {
-            let currentState = this.getAttribute('data-state');
-            let newState = (currentState === "running") ? "paused" : "running";
-            this.setAttribute('data-state', newState);
-            this.innerText = (newState === "running") ? "Pause" : "Run";
-        });
-    });
-</script>
-
 </body>
 </html>

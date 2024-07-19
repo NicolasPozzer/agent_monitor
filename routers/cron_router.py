@@ -2,12 +2,30 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 import subprocess
-import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-CRON_FILE = "crontab.txt"
+class CronJob:
+    def __init__(self, job: str, name: str, state: str = "paused"):
+        self.job = job
+        self.name = name
+        self.state = state  # Estado por defecto es "paused"
+
+    def __str__(self):
+        return f"{self.job} {self.name}"
+
+    @staticmethod
+    def from_string(cron_string: str):
+        parts = cron_string.split()
+        if len(parts) < 6:
+            raise ValueError("Invalid cron string")
+        job = " ".join(parts[:5])
+        name = " ".join(parts[5:])
+        return CronJob(job, name, state="running")
+
+    def to_crontab_string(self):
+        return f"{self.job} {self.name}"
 
 def get_crontab():
     try:
@@ -17,16 +35,15 @@ def get_crontab():
     cron_jobs = []
     for line in crontab.split('\n'):
         if line.strip():
-            parts = line.split()
-            if len(parts) < 6:
+            try:
+                job = CronJob.from_string(line.strip())
+                cron_jobs.append(job)
+            except ValueError:
                 continue
-            job = " ".join(parts[:5])
-            name = " ".join(parts[5:])
-            cron_jobs.append({"job": job, "name": name, "state": "running"})
     return cron_jobs
 
 def set_crontab(crontab):
-    new_crontab = "\n".join([f"{job['job']} {job['name']}" for job in crontab])
+    new_crontab = "\n".join([job.to_crontab_string() for job in crontab])
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
 
@@ -38,14 +55,14 @@ async def read_crontab(request: Request):
 @router.post("/crons/add")
 async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     crontab = get_crontab()
-    crontab.append({"job": cron_job, "name": name, "state": "paused"})
+    crontab.append(CronJob(cron_job, name, state="paused"))
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
 
 @router.post("/crons/delete")
 async def delete_cron_job(cron_job: str = Form(...)):
     crontab = get_crontab()
-    crontab = [job for job in crontab if job["job"].strip() != cron_job.strip()]
+    crontab = [job for job in crontab if job.job.strip() != cron_job.strip()]
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
 
@@ -53,8 +70,8 @@ async def delete_cron_job(cron_job: str = Form(...)):
 async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...)):
     crontab = get_crontab()
     for job in crontab:
-        if job["job"].strip() == cron_job.strip():
-            job["job"] = new_cron_job
+        if job.job.strip() == cron_job.strip():
+            job.job = new_cron_job
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
 
@@ -62,12 +79,7 @@ async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...)
 async def run_cron_job(cron_job: str = Form(...), state: str = Form(...)):
     crontab = get_crontab()
     for job in crontab:
-        if job["job"].strip() == cron_job.strip():
-            job["state"] = state
+        if job.job.strip() == cron_job.strip():
+            job.state = state
     set_crontab(crontab)
-    return RedirectResponse("/", status_code=303)
-
-@router.post("/crons/restore")
-async def restore_cron_jobs():
-    # Código para restaurar el crontab desde un archivo de respaldo
     return RedirectResponse("/", status_code=303)
