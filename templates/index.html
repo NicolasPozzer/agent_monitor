@@ -62,15 +62,23 @@
             {% else %}
             <form style="display:inline;" method="post" action="/crons/run">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="hidden" name="state" value="running">
+                {% if cron.state == 'active' %}
+                <input type="hidden" name="action" value="Pause">
+                <button class="button run-button">Pause</button>
+                {% elif cron.state == 'paused' %}
+                <input type="hidden" name="action" value="Run">
                 <button class="button run-button">Run</button>
+                {% endif %}
             </form>
             {% endif %}
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command" required>
+                <input type="hidden" name="old_name" value="{{ cron.name }}">
+                <input type="text" name="new_cron_job" placeholder="* * * * * command" value="{{ cron.job }}" required>
+                <input type="text" name="name" placeholder="Nombre del Cron Job" value="{{ cron.name }}" required>
                 <button class="button edit-button">Edit</button>
             </form>
+
             <form style="display:inline;" method="post" action="/crons/delete">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
                 <button class="button delete-button">Delete</button>

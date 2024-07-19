@@ -7,7 +7,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 class CronJob:
-    def __init__(self, job: str, name: str, state: str = "paused"):
+    def __init__(self, job: str, name: str, state: str = "active"):
         self.job = job
         self.name = name
         self.state = state
@@ -22,10 +22,12 @@ class CronJob:
             raise ValueError("Invalid cron string")
         job = " ".join(parts[:5])
         name = " ".join(parts[5:])
-        return CronJob(job, name, state="paused")
+        return CronJob(job, name)
 
     def to_crontab_string(self):
         return f"{self.job} {self.name}"
+
+
 
 def get_crontab():
     try:
@@ -43,10 +45,7 @@ def get_crontab():
     return cron_jobs
 
 def set_crontab(crontab):
-    new_crontab = "\n".join([job.to_crontab_string() for job in crontab])
-    # Asegurarse de que haya una línea nueva al final
-    if not new_crontab.endswith('\n'):
-        new_crontab += '\n'
+    new_crontab = "\n".join([job.to_crontab_string() for job in crontab if job.state == "active"])
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
 
@@ -72,19 +71,40 @@ async def delete_cron_job(cron_job: str = Form(...)):
     return RedirectResponse("/", status_code=303)
 
 @router.post("/crons/edit")
-async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...)):
+async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...), name: str = Form(...)):
     crontab = get_crontab()
+    updated = False
     for job in crontab:
         if job.job.strip() == cron_job.strip():
             job.job = new_cron_job
-    set_crontab(crontab)
+            job.name = name
+            updated = True
+            break
+    if updated:
+        set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
 
+
 @router.post("/crons/run")
-async def run_cron_job(cron_job: str = Form(...), state: str = Form(...)):
+async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
     crontab = get_crontab()
-    for job in crontab:
-        if job.job.strip() == cron_job.strip():
-            job.state = state
-    set_crontab(crontab)
+    new_crontab = []
+
+    if action == "Run":
+        # Reactivar el cron job
+        for job in crontab:
+            if job.job.strip() == cron_job.strip() and job.state == "paused":
+                job.state = "active"
+                new_crontab.append(job)
+            elif job.job.strip() != cron_job.strip():
+                new_crontab.append(job)
+    elif action == "Pause":
+        # Pausar el cron job
+        for job in crontab:
+            if job.job.strip() == cron_job.strip() and job.state == "active":
+                job.state = "paused"
+            if job.state == "active":
+                new_crontab.append(job)
+
+    set_crontab(new_crontab)
     return RedirectResponse("/", status_code=303)
