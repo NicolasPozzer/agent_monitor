@@ -2,21 +2,78 @@
 <html>
 <head>
     <title>Gestión de Tareas Cron</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .button {
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+        }
+        .edit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .delete-button {
+            background-color: #f44336;
+            color: white;
+        }
+        .run-button {
+            background-color: #008CBA;
+            color: white;
+        }
+    </style>
 </head>
 <body>
 <h1>Tareas Cron</h1>
-<pre>{{ crontab }}</pre>
+<table>
+    <tr>
+        <th>Nombre</th>
+        <th>Cron Job</th>
+        <th>Acciones</th>
+    </tr>
+    {% for cron in crontab %}
+    <tr>
+        <td>{{ cron.name }}</td>
+        <td>{{ cron.job }}</td>
+        <td>
+            <form style="display:inline;" method="post" action="/crons/run">
+                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <button class="button run-button">Run</button>
+            </form>
+            <form style="display:inline;" method="post" action="/crons/edit">
+                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <input type="text" name="new_cron_job" placeholder="* * * * * command">
+                <button class="button edit-button">Edit</button>
+            </form>
+            <form style="display:inline;" method="post" action="/crons/delete">
+                <input type="hidden" name="cron_job" value="{{ cron.job }}">
+                <button class="button delete-button">Delete</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
 <h2>Agregar Tarea Cron</h2>
 <form action="/crons/add" method="post">
     <input type="text" name="cron_job" placeholder="* * * * * command">
+    <input type="text" name="name" placeholder="Nombre del Cron Job">
     <button type="submit">Agregar</button>
-</form>
-
-<h2>Eliminar Tarea Cron</h2>
-<form action="/crons/delete" method="post">
-    <input type="text" name="cron_job" placeholder="* * * * * command">
-    <button type="submit">Eliminar</button>
 </form>
 </body>
 </html>
