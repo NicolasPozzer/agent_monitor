@@ -22,7 +22,7 @@ class CronJob:
             raise ValueError("Invalid cron string")
         job = " ".join(parts[:5])
         name = " ".join(parts[5:-1])
-        job_state = parts[-1] if len(parts) > 5 and parts[-1] in ["active", "paused"] else 'active'
+        job_state = parts[-1] if len(parts) > 5 else 'active'
         return CronJob(job, name, job_state)
 
 def get_crontab(state=None):
@@ -30,18 +30,17 @@ def get_crontab(state=None):
         crontab = subprocess.check_output(['crontab', '-l']).decode('utf-8')
     except subprocess.CalledProcessError:
         crontab = ""
-
     cron_jobs = []
     for line in crontab.split('\n'):
         if line.strip():
             parts = line.split()
-            name = " ".join(parts[5:])
             job = " ".join(parts[:5])
-            job_state = "active" if len(parts) < 6 else parts[-1]  # Default to 'active'
-            if state is None or job_state == state:
-                cron_jobs.append(CronJob(job, name, job_state))
+            name = " ".join(parts[5:-1])
+            job_state = parts[-1] if len(parts) > 5 else 'active'
+            cron_jobs.append(CronJob(job, name, job_state))
+    if state:
+        cron_jobs = [job for job in cron_jobs if job.job_state == state]
     return cron_jobs
-
 
 def set_crontab(crontab):
     new_crontab = "\n".join([str(job) for job in crontab])
@@ -49,12 +48,15 @@ def set_crontab(crontab):
     p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
 
-
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
     active_crontab = get_crontab(state="active")
     paused_crontab = get_crontab(state="paused")
-    return templates.TemplateResponse("index.html", {"request": request, "active_crontab": active_crontab, "paused_crontab": paused_crontab})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "active_crontab": active_crontab,
+        "paused_crontab": paused_crontab
+    })
 
 @router.post("/crons/add")
 async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
@@ -62,14 +64,14 @@ async def add_cron_job(cron_job: str = Form(...), name: str = Form(...)):
     new_cron = CronJob(cron_job, name)
     crontab.append(new_cron)
     set_crontab(crontab)
-    return RedirectResponse("/crons", status_code=303)
+    return RedirectResponse("/", status_code=303)
 
 @router.post("/crons/delete")
 async def delete_cron_job(cron_job: str = Form(...)):
     crontab = get_crontab()
-    crontab = [job for job in crontab if job.job.strip() != cron_job.strip()]
+    crontab = [job for job in crontab if str(job) != cron_job]
     set_crontab(crontab)
-    return RedirectResponse("/crons", status_code=303)
+    return RedirectResponse("/", status_code=303)
 
 @router.post("/crons/edit")
 async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...), name: str = Form(...)):
@@ -83,7 +85,7 @@ async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...)
             break
     if updated:
         set_crontab(crontab)
-    return RedirectResponse("/crons", status_code=303)
+    return RedirectResponse("/", status_code=303)
 
 @router.post("/crons/run")
 async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
@@ -93,23 +95,19 @@ async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
     if action == "Run":
         # Reactivar el cron job
         for job in paused_crontab:
-            if job.job.strip() == cron_job.strip():
+            if str(job) == cron_job:
                 job.job_state = "active"
                 active_crontab.append(job)
-        # Elimina el cron de la lista pausada
-        paused_crontab = [job for job in paused_crontab if job.job.strip() != cron_job.strip()]
+        paused_crontab = [job for job in paused_crontab if str(job) != cron_job]
     elif action == "Pause":
         # Pausar el cron job
         for job in active_crontab:
-            if job.job.strip() == cron_job.strip():
+            if str(job) == cron_job:
                 job.job_state = "paused"
                 paused_crontab.append(job)
-        # Elimina el cron de la lista activa
-        active_crontab = [job for job in active_crontab if job.job.strip() != cron_job.strip()]
+        active_crontab = [job for job in active_crontab if str(job) != cron_job]
 
     # Actualizar crontab
-    set_crontab(active_crontab)
-    set_crontab(paused_crontab)
+    set_crontab(active_crontab + paused_crontab)
 
     return RedirectResponse("/", status_code=303)
-
