@@ -61,7 +61,7 @@
             <form style="display:inline;" method="post" action="/crons/run">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
                 <input type="hidden" name="action" value="Pause">
-                <button class="button pause-button">Pause</button>
+                <button class="button run-button">Pause</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
