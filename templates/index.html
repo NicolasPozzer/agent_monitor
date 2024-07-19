@@ -41,23 +41,23 @@
 <body>
 <h1>Tareas Cron</h1>
 
-<h2>Cron Jobs Activos</h2>
-{% if active_crontab %}
+<h2>Todos los Cron Jobs</h2>
+{% if crontab %}
 <table>
     <tr>
         <th>Nombre</th>
         <th>Cron Job</th>
         <th>Acciones</th>
     </tr>
-    {% for cron in active_crontab %}
+    {% for cron in crontab %}
     <tr>
         <td>{{ cron.name }}</td>
         <td>{{ cron.job }}</td>
         <td>
             <form style="display:inline;" method="post" action="/crons/run">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="hidden" name="action" value="Pause">
-                <button class="button run-button">Pause</button>
+                <input type="hidden" name="action" value="{% if cron.job.startswith('#') %}Run{% else %}Pause{% endif %}">
+                <button class="button run-button">{% if cron.job.startswith('#') %}Run{% else %}Pause{% endif %}</button>
             </form>
             <form style="display:inline;" method="post" action="/crons/edit">
                 <input type="hidden" name="cron_job" value="{{ cron.job }}">
@@ -73,42 +73,7 @@
     {% endfor %}
 </table>
 {% else %}
-<p>No hay tareas cron activas.</p>
-{% endif %}
-
-<h2>Cron Jobs Pausados</h2>
-{% if paused_crontab %}
-<table>
-    <tr>
-        <th>Nombre</th>
-        <th>Cron Job</th>
-        <th>Acciones</th>
-    </tr>
-    {% for cron in paused_crontab %}
-    <tr>
-        <td>{{ cron.name }}</td>
-        <td>{{ cron.job }}</td>
-        <td>
-            <form style="display:inline;" method="post" action="/crons/run">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="hidden" name="action" value="Run">
-                <button class="button run-button">Run</button>
-            </form>
-            <form style="display:inline;" method="post" action="/crons/edit">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <input type="text" name="new_cron_job" placeholder="* * * * * command">
-                <button class="button edit-button">Edit</button>
-            </form>
-            <form style="display:inline;" method="post" action="/crons/delete">
-                <input type="hidden" name="cron_job" value="{{ cron.job }}">
-                <button class="button delete-button">Delete</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>No hay tareas cron pausadas.</p>
+<p>No hay tareas cron.</p>
 {% endif %}
 
 <h2>Agregar Tarea Cron</h2>
