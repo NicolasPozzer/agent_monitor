@@ -37,7 +37,6 @@ def set_crontab(crontab):
     # Asegurarse de que haya una línea en blanco al final
     if not new_crontab.endswith('\n'):
         new_crontab += '\n'
-    # Escribir el nuevo crontab usando stdin
     p = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
 
