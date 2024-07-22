@@ -6,6 +6,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ${AGENT_MONITOR_DIR:-.}/tes_crons:/opt/agent_monitor/crons
+      - .:/app:rw
     environment:
       - PYTHONUNBUFFERED=1

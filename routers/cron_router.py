@@ -37,9 +37,9 @@ def set_crontab(crontab):
     # Asegurarse de que haya una línea en blanco al final
     if not new_crontab.endswith('\n'):
         new_crontab += '\n'
-    p = subprocess.Popen(['crontab'], stdin=subprocess.PIPE)
+    # Escribir el nuevo crontab usando stdin
+    p = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE)
     p.communicate(input=new_crontab.encode('utf-8'))
-
 
 @router.get("/crons", response_class=HTMLResponse)
 async def read_crontab(request: Request):
@@ -60,22 +60,6 @@ async def delete_cron_job(cron_job: str = Form(...)):
     crontab = [job for job in crontab if job.job.strip() != cron_job.strip()]
     set_crontab(crontab)
     return RedirectResponse("/", status_code=303)
-
-""" edit
-@router.post("/crons/edit")
-async def edit_cron_job(cron_job: str = Form(...), new_cron_job: str = Form(...), name: str = Form(...)):
-    crontab = get_crontab()
-    updated = False
-    for job in crontab:
-        if job.job.strip() == cron_job.strip():
-            job.job = new_cron_job
-            job.name = name
-            updated = True
-            break
-    if updated:
-        set_crontab(crontab)
-    return RedirectResponse("/", status_code=303)
-    """
 
 @router.post("/crons/run")
 async def run_cron_job(cron_job: str = Form(...), action: str = Form(...)):
